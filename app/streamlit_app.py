@@ -46,7 +46,7 @@ if os.environ.get("ORGCHART_AUTOBUILD") == "1" and ready(Path(root)):
         try:
             from orgchart.cli import pipeline
             pipeline(dataset=Path(root), generate_data=True,
-                     config=Path("configs/generation.yaml"), workers=2)
+                     config=Path("configs/generation.yaml"), workers=1)
         except Exception as exc:
             st.error(f"Dataset preparation failed: {exc}")
             st.exception(exc)
