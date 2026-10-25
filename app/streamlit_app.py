@@ -39,17 +39,27 @@ st.set_page_config(page_title="Org chart inference", page_icon="🗂️", layout
 # --- sidebar ---------------------------------------------------------------------------------------
 st.sidebar.title("Org chart inference")
 root = st.sidebar.text_input("Dataset directory", os.environ.get("ORGCHART_DATASET", "data/full"))
-# Build reproducible demo data on first launch when the deployment has no data/ directory.
-# Local runs with an existing dataset skip this entirely.
-if os.environ.get("ORGCHART_AUTOBUILD") == "1" and ready(Path(root)):
-    with st.spinner("Preparing the 600-company demo dataset and inference results. Initial setup may take a few minutes…"):
+# Hosted deployment: download precomputed synthetic data instead of retraining.
+# The public release contains only reproducible synthetic data and model outputs.
+if ready(Path(root)) and os.environ.get("ORGCHART_AUTOBUILD") == "1":
+    import io
+    import urllib.request
+    import zipfile
+
+    release_url = ("https://github.com/daman1088/firmable-org-chart/"
+                   "releases/download/demo-data-v1/demo-data.zip")
+    with st.spinner("Loading precomputed 600-company demo dataset…"):
         try:
-            from orgchart.cli import pipeline
-            pipeline(dataset=Path(root), generate_data=True,
-                     config=Path("configs/generation.yaml"), workers=1)
+            with urllib.request.urlopen(release_url, timeout=120) as response:
+                archive = zipfile.ZipFile(io.BytesIO(response.read()))
+            destination = Path.cwd().resolve()
+            for member in archive.infolist():
+                resolved = (destination / member.filename).resolve()
+                if not resolved.is_relative_to(destination):
+                    raise ValueError("Invalid path in dataset archive")
+            archive.extractall(destination)
         except Exception as exc:
-            st.error(f"Dataset preparation failed: {exc}")
-            st.exception(exc)
+            st.error(f"Could not download the demo dataset: {exc}")
             st.stop()
 
 missing = ready(Path(root))
