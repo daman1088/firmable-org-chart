@@ -19,6 +19,16 @@ sys.path.insert(0, str(APP_DIR))
 pytestmark = pytest.mark.slow
 
 
+@pytest.fixture(scope="module", autouse=True)
+def _restore_main_module():
+    # AppTest leaves sys.modules["__main__"] pointing at streamlit_app.py. Spawned worker processes
+    # re-run the parent's __main__, so later ProcessPoolExecutor users (dataset generation) would
+    # execute the whole app outside a Streamlit session and die with BrokenProcessPool.
+    main = sys.modules["__main__"]
+    yield
+    sys.modules["__main__"] = main
+
+
 @pytest.fixture(scope="module")
 def built(small_dataset):
     normalize_dataset(small_dataset)
