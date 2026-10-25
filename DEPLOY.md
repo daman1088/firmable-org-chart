@@ -1,26 +1,19 @@
-# Hosted app deployment (Streamlit Community Cloud)
+# Deploy the Firmable Org Chart on Streamlit Community Cloud
 
-The hosted app uses the same 600-company generator, fitted model and inference pipeline as the local demonstration.
+This dashboard loads the precomputed 600-company synthetic dataset and fitted model from the public GitHub Release `demo-data-v1`. It does **not** regenerate or train the model in Streamlit Cloud.
 
-## Deploy
-
-1. Open https://share.streamlit.io/ and sign in with GitHub. Authorize access to this private repository if prompted.
-2. Choose **Create app / Deploy from GitHub**, repository `daman1088/firmable-org-chart`, branch `main`, and main file path `app/streamlit_app.py`.
-3. Under **Advanced settings**, select **Python 3.12** and paste the following into **Secrets**:
+1. Go to https://share.streamlit.io and deploy the GitHub repo `daman1088/firmable-org-chart`, branch `main`, main file `app/streamlit_app.py`.
+2. In Advanced settings select Python **3.12** when possible.
+3. Under app Secrets add:
 
    ```toml
    ORGCHART_AUTOBUILD = "1"
    ```
 
-   This is a configuration flag, not a sensitive credential. Root-level Streamlit secrets are exposed as environment variables.
-4. Set a suitable app URL, deploy, and leave the initial build running until it finishes.
-5. Test company selection, the Org chart tab, Ask the Org Chart, Employees and Precision targets. Copy the live URL into your submission.
+   This is a non-secret flag that enables downloading the release if the data is absent.
+4. Deploy or reboot. The first startup downloads `https://github.com/daman1088/firmable-org-chart/releases/download/demo-data-v1/demo-data.zip` and extracts `data/full`; later reruns reuse the files on that instance.
+5. Check company selection, org chart, Ask the Org Chart, Employees and Precision targets. Copy the deployed app URL into the submission.
 
-## Important behavior
+The repo intentionally excludes the `data/` directory; its generator recreates this synthetic dataset. The public release asset also includes synthetic ground truth used for evaluation. Do not put real people, private customer records, or secrets in the release.
 
-* Generated data is intentionally not committed to Git. On a new cloud instance, `ORGCHART_AUTOBUILD = "1"` triggers `orgchart.cli.pipeline(... generate_data=True)` on first launch to create the dataset, normalization files, models, predictions and evaluation reports inside `data/full`.
-* First startup may be slow; subsequent reruns on the same instance reuse files. A cloud restart or redeploy that deletes the instance's ephemeral disk will rebuild them.
-* Building the entire pipeline on Community Cloud is **best-effort**: constrained hosted instances can hit memory or execution limits. Check the Cloud deployment logs if generation fails. For a production/reviewer-critical hosted build, a persistent artifact store or a host with enough memory and disk is more robust.
-* The local workflow is unchanged: `make setup`, `make pipeline GENERATE=1`, `make app`.
-* The publicly accessible dashboard uses synthetic data; never upload credentials or real employee data.
-* To let Firmable review the Git source separately, invite them to the private GitHub repository, or make the repository public if the assessment terms allow.
+If the cloud service resets its ephemeral disk, the next app launch downloads the release again. For local development, use `make setup`, `make pipeline GENERATE=1`, `make app`.
