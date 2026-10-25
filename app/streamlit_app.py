@@ -39,6 +39,19 @@ st.set_page_config(page_title="Org chart inference", page_icon="🗂️", layout
 # --- sidebar ---------------------------------------------------------------------------------------
 st.sidebar.title("Org chart inference")
 root = st.sidebar.text_input("Dataset directory", os.environ.get("ORGCHART_DATASET", "data/full"))
+# Build reproducible demo data on first launch when the deployment has no data/ directory.
+# Local runs with an existing dataset skip this entirely.
+if os.environ.get("ORGCHART_AUTOBUILD") == "1" and ready(Path(root)):
+    with st.spinner("Preparing the 600-company demo dataset and inference results. Initial setup may take a few minutes…"):
+        try:
+            from orgchart.cli import pipeline
+            pipeline(dataset=Path(root), generate_data=True,
+                     config=Path("configs/generation.yaml"), workers=2)
+        except Exception as exc:
+            st.error(f"Dataset preparation failed: {exc}")
+            st.exception(exc)
+            st.stop()
+
 missing = ready(Path(root))
 if missing:
     st.error("Dataset is not built yet. Run `make pipeline GENERATE=1` (or `orgchart pipeline data/full --generate`). "
