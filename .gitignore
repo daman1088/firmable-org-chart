@@ -1,0 +1,22 @@
+# Environments and secrets
+.venv/
+venv/
+.env
+.env.*
+.streamlit/secrets.toml
+
+# Caches and build metadata
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.hypothesis/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.DS_Store
+
+# Datasets are fully reproducible from configs/ + seed (see README); don't commit them.
+data/

@@ -1,0 +1,118 @@
+# Synthetic dataset generation config.
+# Every value here is recorded in the dataset manifest, so a dataset can be
+# regenerated exactly from (this file + seed + package version).
+# Override any value from the CLI:  orgchart generate --set company_size.observed_median=150
+
+dataset:
+  name: full
+  n_companies: 600
+  seed: 20261024
+  snapshot_date: 2026-06-30          # "as of" date for tenure / start dates
+  min_observed_employees: 100        # HARD guarantee, enforced after missing-employee simulation
+
+splits:                              # company-level, stratified by industry x size band
+  train: 0.70
+  calibration: 0.15
+  test: 0.15
+
+company_size:                        # size of the OBSERVED employee set (true size = observed / coverage)
+  observed_median: 260
+  sigma: 0.75                        # log-normal spread
+  max_observed: 3000
+
+industries:                          # sampling weights; archetype definitions live in generation/catalog.py
+  saas: 0.22
+  fintech: 0.14
+  manufacturing: 0.16
+  healthcare: 0.16
+  retail: 0.16
+  consulting: 0.16
+
+countries:                           # HQ country weights
+  AU: 0.55
+  NZ: 0.06
+  US: 0.14
+  GB: 0.10
+  SG: 0.06
+  IN: 0.05
+  CA: 0.04
+
+structure:
+  span:                              # [min, max] direct reports for a manager that manages managers, by level
+    "12": [5, 10]
+    "11": [4, 8]
+    "10": [4, 8]
+    "9": [4, 8]
+    "8": [4, 8]
+    "7": [4, 8]
+    "6": [3, 7]
+    "5": [2, 6]
+  skip_level_probability: 0.15       # child manager sits 2 levels below parent instead of 1
+  regional_probability: 0.35         # company organises scopable departments by region
+  divisional_probability: 0.35       # ...or by division/business unit (large companies only)
+  divisional_min_size: 600
+  scope_min_department_size: 30
+  executive_assistant_min_size: 150
+  executive_assistant_probability: 0.7
+  chief_of_staff_min_size: 400
+  chief_of_staff_probability: 0.4
+  exec_assistant_for_c_level_min_size: 1000
+  exec_assistant_for_c_level_probability: 0.4
+  contractor_rate: 0.04
+  board_profiles_mean: 1.0           # non-employee profiles (board, advisors) that claim the company
+  board_profiles_max: 4
+
+coverage:                            # fraction of true employees present in the observed data
+  mean: 0.86
+  concentration: 30                  # Beta concentration; higher = less company-to-company variance
+  min: 0.70
+  max: 0.97
+  ceo_observed_probability: 0.97
+  level_missing_multiplier:          # relative propensity to be missing, by level (renormalised per company)
+    "12": 0.3
+    "11": 0.3
+    "10": 0.5
+    "9": 0.5
+    "8": 0.8
+    "7": 1.0
+    "6": 1.4
+    "5": 1.4
+    "4": 1.3
+    "3": 1.0
+    "2": 1.0
+    "1": 1.2
+    "0": 1.5
+
+noise:
+  missing_department: 0.30
+  mislabeled_department: 0.03
+  missing_location: 0.05
+  greater_area_location: 0.20        # "Greater Sydney Area" style location strings
+  missing_start_date: 0.20
+  stale_title: 0.05                  # title shows the previous (lower) level
+  title_inflation_small_company: 0.10
+  small_company_size: 300
+  vague_title: 0.02
+  empty_title: 0.005
+  contractor_marker: 0.6
+  transforms:                        # applied independently to every rendered title
+    abbreviate_seniority: 0.25
+    abbreviate_terms: 0.30
+    expand_terms: 0.05
+    separator: 0.15
+    parenthesise_qualifier: 0.05
+    drop_qualifier: 0.10
+    case: 0.04
+    decoration: 0.05
+  holdout_transforms:                # ONLY applied to test-split companies (unseen during training/calibration)
+    holdout_abbreviations: 0.15
+    reorder_qualifier: 0.10
+    holdout_separator: 0.05
+    typo: 0.02
+
+realism_targets:                     # soft checks reported by `orgchart validate`
+  mean_span_of_control: [3.5, 9.0]
+  manager_ratio: [0.08, 0.25]
+  median_max_depth: [4, 9]
+  mean_coverage: [0.78, 0.92]
+  distinct_title_ratio: [0.05, 0.6]

@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orgchart"
+version = "0.1.0"
+description = "Org chart inference platform: realistic synthetic company data and explainable reporting-line inference."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb>=1.0",
+    "pyarrow>=15",
+    "pandas>=2.1",
+    "numpy>=1.26",
+    "pydantic>=2.5",
+    "pyyaml>=6",
+    "faker>=24",
+    "typer>=0.12",
+    "rich>=13",
+    "streamlit>=1.35",
+    "altair>=5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "hypothesis>=6"]
+
+[project.scripts]
+orgchart = "orgchart.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = ["slow: end-to-end tests that generate a dataset (deselect with -m 'not slow')"]
