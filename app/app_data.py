@@ -38,7 +38,7 @@ def ready(root: Path) -> list[str]:
     return [str(p) for p in needed if not p.exists()]
 
 
-@st.cache_data(show_spinner="Loading observed profiles and predictions…")
+@st.cache_resource(show_spinner="Loading observed profiles and predictions…")
 def load(root: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     paths = DatasetPaths.of(root)
     people = load_people(root)
