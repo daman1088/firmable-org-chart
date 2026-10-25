@@ -42,7 +42,8 @@ root = st.sidebar.text_input("Dataset directory", os.environ.get("ORGCHART_DATAS
 # Hosted deployment: download precomputed synthetic data instead of retraining.
 # The public release contains only reproducible synthetic data and model outputs.
 if ready(Path(root)) and os.environ.get("ORGCHART_AUTOBUILD") == "1":
-    import io
+    import shutil
+    import tempfile
     import urllib.request
     import zipfile
 
@@ -50,14 +51,18 @@ if ready(Path(root)) and os.environ.get("ORGCHART_AUTOBUILD") == "1":
                    "releases/download/demo-data-v1/demo-data.zip")
     with st.spinner("Loading precomputed 600-company demo dataset…"):
         try:
-            with urllib.request.urlopen(release_url, timeout=120) as response:
-                archive = zipfile.ZipFile(io.BytesIO(response.read()))
-            destination = Path.cwd().resolve()
-            for member in archive.infolist():
-                resolved = (destination / member.filename).resolve()
-                if not resolved.is_relative_to(destination):
-                    raise ValueError("Invalid path in dataset archive")
-            archive.extractall(destination)
+            # Download to disk instead of buffering the entire archive in RAM.
+            with tempfile.TemporaryDirectory() as tempdir:
+                zip_path = Path(tempdir) / "demo-data.zip"
+                with urllib.request.urlopen(release_url, timeout=120) as response, zip_path.open("wb") as output:
+                    shutil.copyfileobj(response, output, length=1024 * 1024)
+                destination = Path.cwd().resolve()
+                with zipfile.ZipFile(zip_path) as archive:
+                    for member in archive.infolist():
+                        resolved = (destination / member.filename).resolve()
+                        if not resolved.is_relative_to(destination):
+                            raise ValueError("Invalid path in dataset archive")
+                    archive.extractall(destination)
         except Exception as exc:
             st.error(f"Could not download the demo dataset: {exc}")
             st.stop()
